@@ -1,13 +1,7 @@
-# importing packages 
-#C:\Users\Tomek\Desktop
 #Palm - "Composite" video
 #https://youtu.be/yCLrXEvfsGk?si=9AuyfwbHON1Nnx7m
 #Ramones - "Ramones" playlist
 #https://youtube.com/playlist?list=PLBnJv6rImVe-LcbIsBXzIp6BpV6hqZnoO&si=jNymhDVGkVd3QHNn
-#Trening o 17 channel ID
-#UCxfsPSY-xHBDhNhKk9N10kA
-#Orgrim
-#UCvhsxkLSlV2L0P1YkdXk-sg
 
 
 from pytube import YouTube, Playlist

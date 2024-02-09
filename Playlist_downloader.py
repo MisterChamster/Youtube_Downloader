@@ -239,12 +239,14 @@ def ExtractPlaylistData(savepath, slashsys):
 
 
 
-savepath = GetDesktopPathAndSlashsys()[0]
+
+
 slashsys = GetDesktopPathAndSlashsys()[1]
-chdir(savepath)
 
 
 while True:
+    savepath = GetDesktopPathAndSlashsys()[0]
+    chdir(savepath)
     action_type = ReadActionType()
 
     if action_type == "e":

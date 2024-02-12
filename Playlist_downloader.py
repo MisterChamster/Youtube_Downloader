@@ -200,13 +200,17 @@ def ExtractPlaylistData(savepath, slashsys):
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
 
-    with open(f"{playlist.title}_data_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
+    with open(f"{sign_police(playlist.title)}_data_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
         f.write(f"Playlist name: \t\t\t{playlist.title}\n")
         f.write(f"Playlist's url:\t\t\t{link}\n")
-        f.write(f"Playlist's owner: \t\t{playlist.owner}, {current_time}\n")
+        f.write(f"Playlist's owner: \t\t{playlist.owner}\n")
+        f.write(f"Owner's URL: \t\t\t{playlist.owner_url}\n")
         #f.write(f"Playlist last updated on: \t{playlist.last_updated}\n")
-        f.write(f"Time of this data extract: \t{calendarium}, \n")
-        f.write(f"Playlist views so far: \t\t{spaces(playlist.views)}\n")
+        f.write(f"Time of this data extract: \t{calendarium}, {current_time} \n")
+        try:
+            f.write(f"Playlist views so far: \t\t{spaces(playlist.views)}\n")
+        except:
+            f.write(f"Playlist views so far: \t\t*Option disabled, sorry*\n")
         f.write(f"Current playlist length: \t{number_of_tracks}\n\n\n\n\n")
 
         halfway = ceil(number_of_tracks/2)
@@ -217,7 +221,7 @@ def ExtractPlaylistData(savepath, slashsys):
                 print("We're halfway there!")
             element = YouTube(playlist_list[index])
             try:
-                f.write(f"{index}. {element.title}\n")
+                f.write(f"{number_of_tracks - index}. {element.title}\n")
                 f.write(f"Views: {spaces(element.views)}\n")
                 f.write(f"{playlist_list[index]}\n\n")
             except:

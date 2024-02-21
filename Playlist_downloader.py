@@ -24,8 +24,8 @@ def sign_police(string):
     
     policedstring = "".join(charlist)
 
-    if string == policedstring:
-        print(f"{string} - invalid title. Will be saved without illegal signs")
+    if string != policedstring:
+        print(f"{string} - invalid title. Save name will not contain illegal signs")
     return policedstring
 
 def spaces(integer):

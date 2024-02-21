@@ -21,7 +21,12 @@ def sign_police(string):
             charlist.pop(i)
         else:
             i += 1
-    return "".join(charlist)
+    
+    policedstring = "".join(charlist)
+
+    if string == policedstring:
+        print(f"{string} - invalid title. Will be saved without illegal signs")
+    return policedstring
 
 def spaces(integer):
     integer = str(integer)
@@ -200,7 +205,7 @@ def ExtractPlaylistData(savepath, slashsys):
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
 
-    with open(f"{sign_police(playlist.title)}_data_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
+    with open(f"{titlevar}_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
         f.write(f"Playlist name: \t\t\t{playlist.title}\n")
         f.write(f"Playlist's url:\t\t\t{link}\n")
         f.write(f"Playlist's owner: \t\t{playlist.owner}\n")

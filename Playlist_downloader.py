@@ -65,11 +65,13 @@ def ReadSaveExtension():
 def ReadNumbered():
     inputNUM = " "
     while True:
-        inputNUM = input("Do You want elements to be numbered? (Enter - yes, n - no)\n>>").lower()
+        inputNUM = input("Do You want elements to be numbered? (Enter - yes, r - reverse, n - no)\n>>").lower()
         if inputNUM == "" or inputNUM == "y":
-            return True
+            return "normal"
+        if inputNUM == "r":
+            return "reverse"
         if inputNUM == "n":
-            return False
+            return "no"
 
 def ReadNumOfTracks(playlist_len):
     num = input("Input the number of tracks (if all press Enter): \n>> ")
@@ -121,16 +123,19 @@ def ReadCutLens():
 
     return listreturn
 
-def SaveSingle(extension, savepath):
+def SaveSingle(extension, savepath, slashsys):
     try:
         vid = YouTube(str(input("Enter the URL of the video You want to download: \n>> "))) 
     except:
         return
 
-    if extension == ".mp3":
-        get_file = vid.streams.get_audio_only()
-    elif extension == ".mp4":
-        get_file = vid.streams.filter(res = str(vid.streams.get_highest_resolution()).split()[3][5:-1]).first()
+    try:
+        if extension == ".mp3":
+            get_file = vid.streams.get_audio_only()
+        elif extension == ".mp4":
+            get_file = vid.streams.filter(res = str(vid.streams.get_highest_resolution()).split()[3][5:-1]).first()
+    except:
+        print("A problem has occurred. That video might be age restricted.")
 
     titlevar = sign_police(vid.title)
     finalfilename = titlevar + extension
@@ -143,11 +148,12 @@ def SaveSingle(extension, savepath):
         get_file.download(output_path=savepath, filename=finalfilename) 
         print("\n" + finalfilename + " has been successfully downloaded")
     except:
-        print("Something is not a-okay! Couldn't change the name, You have to do it yourself, sorry")
+        pass
+    #print("Something is not a-okay! Couldn't change the name, You have to do it yourself, sorry")
 
 def SavePlaylist(extension, savepath, slashsys):
     try:
-        playlist = Playlist(str(input("Enter the URL of the album You want to download: \n>> ")))
+        playlist = Playlist(str(input("Enter the URL of the album You want to download: \n>>")))
     except:
         return
     
@@ -160,29 +166,36 @@ def SavePlaylist(extension, savepath, slashsys):
 
     mkdir(titlevar)
     chdir(titlevar)
-    playlist_list = playlist.videos
+    playlist_list = playlist.video_urls
     number_of_tracks = ReadNumOfTracks(len(playlist_list))
+    playlist_list = playlist_list[:number_of_tracks]
+
+    max_zeros = len(str(len(playlist_list)))
+    max_zeros = max_zeros - (max_zeros > 1)
     numbered = ReadNumbered()
+    if numbered == "reverse":
+        playlist_list.reverse()
     cutlen = ReadCutLens()
 
-    for index in range(number_of_tracks):
-        vid = playlist_list[index]
-
-        if extension == ".mp3":
-            get_file = vid.streams.get_audio_only()
-        elif extension == ".mp4":
-            get_file = vid.streams.filter(res = str(vid.streams.get_highest_resolution()).split()[3][5:-1]).first()
-
+    for index in range(1, number_of_tracks + 1):
+        vid = YouTube(playlist_list[index - 1])
         titlevar = sign_police(vid.title)
-        fileindex = ("0" * (index < 9) + f"{index+1}. ") * (numbered == True)
+        number_of_zeros = max_zeros - len(str(index)) + 1
+        fileindex = ("0" * number_of_zeros + f"{index}. ") * (numbered != "no")
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
-        '''i = 1
-        while path.exists(savepath + slashsys + finalfilename):
-            finalfilename = finalfilename[:-len(extension)] + "_d"*i + extension
-            i += 1'''
 
-        get_file.download(filename=finalfilename)
-        print(finalfilename)
+        try:
+            if extension == ".mp3":
+                get_file = vid.streams.get_audio_only()
+            elif extension == ".mp4":
+                get_file = vid.streams.filter(res = str(vid.streams.get_highest_resolution()).split()[3][5:-1]).first()
+
+            get_file.download(filename=finalfilename)            
+            print(finalfilename)
+
+        except:
+            print(f"{titlevar} is probably age restricted. Here's a link: {playlist_list[index]}")
+
 
 
     titlevar = sign_police(playlist.title)
@@ -190,7 +203,7 @@ def SavePlaylist(extension, savepath, slashsys):
 
 def ExtractPlaylistData(savepath, slashsys):
     try:
-        link = str(input("Enter the URL of the playlist You want to extract data from: \n>> "))
+        link = str(input("Enter the URL of the playlist You want to extract data from: \n>>"))
         playlist = Playlist(link)
     except:
         return
@@ -243,15 +256,9 @@ def ExtractPlaylistData(savepath, slashsys):
         print("No errors have occurred during extraction")
     else:
         print(f"Number of errors during extraction: {exception_count}")
-    
-
-
-
-
 
 
 slashsys = GetDesktopPathAndSlashsys()[1]
-
 
 while True:
     savepath = GetDesktopPathAndSlashsys()[0]
@@ -264,7 +271,7 @@ while True:
     else:
         extension = ReadSaveExtension()
         if action_type == "s":
-            SaveSingle(extension, savepath)
+            SaveSingle(extension, savepath, slashsys)
         elif action_type == "p":
             SavePlaylist(extension, savepath, slashsys)
 
@@ -273,4 +280,5 @@ while True:
     while again not in ["", "y", "e"]:
         again = input("\nPress Enter to download another time or input e to end the program\n>>")
     if again == "e":
+        print()
         break

@@ -63,13 +63,13 @@ def GetDesktopPathAndSlashsys():
 def ReadActionType():
     inputRAT = ""
     while inputRAT not in ["s", "p", "e"]:
-        inputRAT = input("Input s for a single download, p for playlist download or e for playlist data extract\n>>").lower()
+        inputRAT = input("What do You want to download? (s - single video, p - playlist, e - playlist data)\n>>").lower()
     return inputRAT
 
 def ReadSaveExtension():
     inputRSE = ""
     while inputRSE not in ["a", "v"]:
-        inputRSE = input("Input a to download as audio or v to download as a video\n>>").lower()
+        inputRSE = input("What format do You want to save as? (a - audio, v - video)\n>>").lower()
 
     if inputRSE == "a":
         return ".mp3"
@@ -88,14 +88,44 @@ def ReadNumbered():
             return "no"
 
 def ReadNumOfTracks(playlist_len):
-    num = input("Input the number of tracks (if all press Enter): \n>> ")
+    num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>> ")
     if num == '':
-        return playlist_len
-    elif int(num) > playlist_len:
-        print("Number inputted by You is too big! Will download all the tracks.")
-        return playlist_len
+        return [0, playlist_len]
+    
+    elif num == 'f':
+        start = input("Starting from element:\n>>")
+        if not start.isdigit():
+            print("Starting from the beginning.")
+            start = 0
+        elif int(start) > playlist_len or int(start) < 1:
+            print("Starting from the beginning.")
+            start = 0
+        else:
+            start = int(start) - 1
+
+        end = input("Ending on element:\n>>")  
+        if not end.isdigit():
+            print("Ending at the end.")
+            end = playlist_len
+        elif int(end) < start or int(end) > playlist_len:
+            print("Ending at the end.")
+            end = playlist_len
+        else:
+            end = int(end)
+
+        return (start, end)
+
+        
+    elif num.isdigit() and int(num) <= playlist_len:
+        return [0, int(num)]
+    
+    elif num.isdigit() and int(num) > playlist_len:
+        print("Number inputted by You is too big! Downloading all the tracks.\n")
+        return [0, playlist_len]
+    
     else:
-        return int(num)
+        print("Downloading whole playlist.\n")
+        return [0, playlist_len]
     
 def NameYourFile(lenofcutlist, policedtitle, ext):
     if lenofcutlist[0].isdigit():
@@ -125,7 +155,7 @@ def ReadCutLens():
     inputSC = " "
     listreturn = ["", ""]
     while inputSC not in ["", "s", "b", "e"]:
-        inputSC = input("Press Enter to not cut anything, input s to cut out at the start, e to cut at the end or b to cut both\n>>").lower()
+        inputSC = input("Do You want to cut names of all elements? (Enter - no, s - at the start, e - at the end, b - both)\n>>").lower()
 
     if inputSC == "s":
         listreturn[0] = str(input("Input the string or length You want to cut at the start:\n>>"))
@@ -182,18 +212,17 @@ def SavePlaylist(extension, savepath, slashsys):
     chdir(titlevar)
     playlist_list = playlist.video_urls
     number_of_tracks = ReadNumOfTracks(len(playlist_list))
-    playlist_list = playlist_list[:number_of_tracks]
+    #playlist_list = playlist_list[number_of_tracks[0]:number_of_tracks[1]+1]
 
-    playlist_len = len(playlist_list)
     numbered = ReadNumbered()
     if numbered == "reverse":
         playlist_list.reverse()
     cutlen = ReadCutLens()
 
-    for index in range(0, number_of_tracks):
+    for index in range(number_of_tracks[0], number_of_tracks[1]):
         vid = YouTube(playlist_list[index])
         titlevar = sign_police(vid.title)
-        fileindex = (zeros_at_beginning(index, playlist_len) + f"{index+1}. ") * (numbered != "no")
+        fileindex = (zeros_at_beginning(index, len(playlist_list)) + f"{index+1}. ") * (numbered != "no")
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:
@@ -290,7 +319,7 @@ while True:
 
     again = " "
     while again not in ["", "y", "e"]:
-        again = input("\nPress Enter to download another time or input e to end the program\n>>")
+        again = input("\nWhat now? (Enter - run program again, e - end program)\n>>")
     if again == "e":
         print()
         break

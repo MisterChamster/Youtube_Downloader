@@ -28,6 +28,20 @@ def sign_police(string):
         print(f"{string} - invalid title. Save name will not contain illegal signs")
     return policedstring
 
+def zeros_at_beginning(index, playlist_len):
+    """
+    index - int
+    playlist_len - int
+
+    if playlist_len < 10:
+        return "0"
+    digits_of_biggest_number = len(str(playlist_len))
+    digits_of_index = len(str(index+1))
+    gg = digits_of_biggest_number - digits_of_index
+    return gg * "0"
+    """
+    return (playlist_len < 10) * "0" + (playlist_len >= 10) *(len(str(playlist_len)) - len(str(index+1))) * "0"       #I'm genuinely sorry
+
 def spaces(integer):
     integer = str(integer)
     result = ''
@@ -78,7 +92,7 @@ def ReadNumOfTracks(playlist_len):
     if num == '':
         return playlist_len
     elif int(num) > playlist_len:
-        print("Number inputted by You is too big! Downloading all the tracks.")
+        print("Number inputted by You is too big! Will download all the tracks.")
         return playlist_len
     else:
         return int(num)
@@ -170,18 +184,16 @@ def SavePlaylist(extension, savepath, slashsys):
     number_of_tracks = ReadNumOfTracks(len(playlist_list))
     playlist_list = playlist_list[:number_of_tracks]
 
-    max_zeros = len(str(len(playlist_list)))
-    max_zeros = max_zeros - (max_zeros > 1)
+    playlist_len = len(playlist_list)
     numbered = ReadNumbered()
     if numbered == "reverse":
         playlist_list.reverse()
     cutlen = ReadCutLens()
 
-    for index in range(1, number_of_tracks + 1):
-        vid = YouTube(playlist_list[index - 1])
+    for index in range(0, number_of_tracks):
+        vid = YouTube(playlist_list[index])
         titlevar = sign_police(vid.title)
-        number_of_zeros = max_zeros - len(str(index)) + 1
-        fileindex = ("0" * number_of_zeros + f"{index}. ") * (numbered != "no")
+        fileindex = (zeros_at_beginning(index, playlist_len) + f"{index+1}. ") * (numbered != "no")
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:

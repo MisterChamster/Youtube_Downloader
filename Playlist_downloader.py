@@ -5,13 +5,28 @@
 
 #duplicates don't save after first one is saved
 
+"""
+if not is_internet_available():
+    print("Internet connection failed.\n\n")
+    return
+"""
+
 from pytube import YouTube, Playlist
 from platform import system
 from os import chdir, mkdir, path, environ
 from math import ceil
 from datetime import date
 from time import localtime, strftime
+from socket import create_connection
 
+
+def is_internet_available():
+    try:
+        create_connection(("www.google.com", 80))
+        return True
+    except OSError:
+        pass
+    return False
 
 def sign_police(string):
     charlist = [a for a in string]
@@ -63,7 +78,7 @@ def GetDesktopPathAndSlashsys():
 def ReadActionType():
     inputRAT = ""
     while inputRAT not in ["s", "p", "e"]:
-        inputRAT = input("What do You want to download? (s - single video, p - playlist, e - playlist data)\n>>").lower()
+        inputRAT = input("What do You want to download? (s - single video, p - playlist, e - extracted playlist data)\n>>").lower()
     return inputRAT
 
 def ReadSaveExtension():
@@ -76,16 +91,21 @@ def ReadSaveExtension():
     else:  #elif inputRSE == "v":
         return ".mp4"
 
-def ReadNumbered():
+def ReadNumbered(number_of_tracks):
     inputNUM = " "
     while True:
-        inputNUM = input("Do You want elements to be numbered? (Enter - yes, r - reverse, n - no)\n>>").lower()
+        if number_of_tracks != 0:
+            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, r - reverse, f - starting from element's number in playlist, n - no)\n>>").lower()
+        else:
+            inputNUM = input("Do You want elements to be numbered? (Enter - yes, r - reverse, n - no)\n>>").lower()
         if inputNUM == "" or inputNUM == "y":
-            return "normal"
+            return str(number_of_tracks)
         if inputNUM == "r":
             return "reverse"
         if inputNUM == "n":
             return "no"
+        if inputNUM == "f":
+            return "from"
 
 def ReadNumOfTracks(playlist_len):
     num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>> ")
@@ -169,8 +189,12 @@ def ReadCutLens():
 
 def SaveSingle(extension, savepath, slashsys):
     try:
+        if not is_internet_available():
+            print("Internet connection failed.\n\n")
+            return
         vid = YouTube(str(input("Enter the URL of the video You want to download: \n>> "))) 
     except:
+        print("URL incorrect\n\n")
         return
 
     try:
@@ -179,6 +203,9 @@ def SaveSingle(extension, savepath, slashsys):
         elif extension == ".mp4":
             get_file = vid.streams.filter(res = str(vid.streams.get_highest_resolution()).split()[3][5:-1]).first()
     except:
+        if not is_internet_available():
+            print("Internet connection failed.\n\n")
+            return
         print("A problem has occurred. That video might be age restricted.")
 
     titlevar = sign_police(vid.title)
@@ -197,8 +224,12 @@ def SaveSingle(extension, savepath, slashsys):
 
 def SavePlaylist(extension, savepath, slashsys):
     try:
-        playlist = Playlist(str(input("Enter the URL of the album You want to download: \n>>")))
+        if not is_internet_available():
+            print("Internet connection failed.\n\n")
+            return
+        playlist = Playlist(str(input("Enter the URL of the playlist You want to download: \n>>")))
     except:
+        print("URL incorrect\n\n")
         return
     
     titlevar = sign_police(playlist.title)
@@ -208,21 +239,32 @@ def SavePlaylist(extension, savepath, slashsys):
         titlevar += "_d"*i
         i += 1
 
-    mkdir(titlevar)
-    chdir(titlevar)
     playlist_list = playlist.video_urls
     number_of_tracks = ReadNumOfTracks(len(playlist_list))
-    #playlist_list = playlist_list[number_of_tracks[0]:number_of_tracks[1]+1]
-
-    numbered = ReadNumbered()
+    numbered = ReadNumbered(number_of_tracks[0])
     if numbered == "reverse":
         playlist_list.reverse()
+    
+    if not numbered.isdigit():
+        numbered = 0
+    else:
+        numbered = int(numbered)
+
     cutlen = ReadCutLens()
+
+    if not is_internet_available():
+        print("Internet connection failed.\n\n")
+        return
+    mkdir(titlevar)
+    chdir(titlevar)
 
     for index in range(number_of_tracks[0], number_of_tracks[1]):
         vid = YouTube(playlist_list[index])
+        if not is_internet_available():
+            print("Internet connection failed.\n\n")
+            return
         titlevar = sign_police(vid.title)
-        fileindex = (zeros_at_beginning(index, len(playlist_list)) + f"{index+1}. ") * (numbered != "no")
+        fileindex = (zeros_at_beginning(index, len(playlist_list)) + f"{index+1-numbered}. ") * (numbered != "no")
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:
@@ -235,6 +277,9 @@ def SavePlaylist(extension, savepath, slashsys):
             print(finalfilename)
 
         except:
+            if not is_internet_available():
+                print("Internet connection failed.\n\n")
+                return
             print(f"{titlevar} is probably age restricted. Here's a link: {playlist_list[index]}")
 
 
@@ -245,19 +290,27 @@ def SavePlaylist(extension, savepath, slashsys):
 def ExtractPlaylistData(savepath, slashsys):
     try:
         link = str(input("Enter the URL of the playlist You want to extract data from: \n>>"))
+        if not is_internet_available():
+            print("Internet connection failed.\n\n")
+            return
         playlist = Playlist(link)
     except:
+        print("URL incorrect\n\n")
         return
     
     titlevar = sign_police(playlist.title) + "_data"
-    if not path.exists(savepath + slashsys + titlevar):
-        mkdir(titlevar)
 
-    chdir(titlevar)
     playlist_list = playlist.video_urls
     number_of_tracks = len(playlist_list)
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
+    
+    if not is_internet_available():
+        print("Internet connection failed.\n\n")
+        return
+    if not path.exists(savepath + slashsys + titlevar):
+        mkdir(titlevar)
+    chdir(titlevar)
 
     with open(f"{titlevar}_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
         f.write(f"Playlist name: \t\t\t{playlist.title}\n")
@@ -279,11 +332,17 @@ def ExtractPlaylistData(savepath, slashsys):
             if index == halfway:
                 print("We're halfway there!")
             element = YouTube(playlist_list[index])
+            if not is_internet_available():
+                print("Internet connection failed.\n\n")
+                return
             try:
                 f.write(f"{number_of_tracks - index}. {element.title}\n")
                 f.write(f"Views: {spaces(element.views)}\n")
                 f.write(f"{playlist_list[index]}\n\n")
             except:
+                if not is_internet_available():
+                    print("Internet connection failed.\n\n")
+                    return
                 exception_count += 1
                 f.write(f"{index}. An error has occurred when trying to download data of a video with URL: {playlist_list[index]}\n\n")
 
@@ -291,7 +350,10 @@ def ExtractPlaylistData(savepath, slashsys):
             f.write("\n\n\n\nNo errors have occurred during extraction")
         else:
             f.write(f"Number of errors during extraction: {exception_count}")
-
+            
+    if not is_internet_available():
+        print("Internet connection failed.\n\n")
+        return
     print("\n" + playlist.title + " data has been successfully extracted to Your desktop!")
     if exception_count == 0:
         print("No errors have occurred during extraction")

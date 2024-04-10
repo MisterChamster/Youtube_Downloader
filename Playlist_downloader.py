@@ -5,12 +5,6 @@
 
 #duplicates don't save after first one is saved
 
-"""
-if not is_internet_available():
-    print("Internet connection failed.\n\n")
-    return
-"""
-
 from pytube import YouTube, Playlist
 from platform import system
 from os import chdir, mkdir, path, environ
@@ -91,21 +85,21 @@ def ReadSaveExtension():
     else:  #elif inputRSE == "v":
         return ".mp4"
 
-def ReadNumbered(number_of_tracks):
+def ReadNumbered(min_el_number):
     inputNUM = " "
     while True:
-        if number_of_tracks != 0:
-            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, r - reverse, f - starting from element's number in playlist, n - no)\n>>").lower()
+        if min_el_number != 0:
+            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, n - no, f - starting from element's number in playlist, r - reverse)\n>>").lower()
+            if inputNUM == "f":
+                return "from"
         else:
-            inputNUM = input("Do You want elements to be numbered? (Enter - yes, r - reverse, n - no)\n>>").lower()
+            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, n - no, r - reverse)\n>>").lower()
         if inputNUM == "" or inputNUM == "y":
-            return str(number_of_tracks)
+            return str(min_el_number)
         if inputNUM == "r":
             return "reverse"
         if inputNUM == "n":
             return "no"
-        if inputNUM == "f":
-            return "from"
 
 def ReadNumOfTracks(playlist_len):
     num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>> ")
@@ -240,11 +234,11 @@ def SavePlaylist(extension, savepath, slashsys):
         i += 1
 
     playlist_list = playlist.video_urls
-    number_of_tracks = ReadNumOfTracks(len(playlist_list))
-    numbered = ReadNumbered(number_of_tracks[0])
+    number_of_elements = ReadNumOfTracks(len(playlist_list))
+    numbered = ReadNumbered(number_of_elements[0])
+
     if numbered == "reverse":
         playlist_list.reverse()
-    
     if not numbered.isdigit():
         numbered = 0
     else:
@@ -258,13 +252,14 @@ def SavePlaylist(extension, savepath, slashsys):
     mkdir(titlevar)
     chdir(titlevar)
 
-    for index in range(number_of_tracks[0], number_of_tracks[1]):
+    for index in range(number_of_elements[0], number_of_elements[1]):
         vid = YouTube(playlist_list[index])
         if not is_internet_available():
             print("Internet connection failed.\n\n")
             return
         titlevar = sign_police(vid.title)
         fileindex = (zeros_at_beginning(index, len(playlist_list)) + f"{index+1-numbered}. ") * (numbered != "no")
+        #numbered += 1
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:
@@ -301,7 +296,7 @@ def ExtractPlaylistData(savepath, slashsys):
     titlevar = sign_police(playlist.title) + "_data"
 
     playlist_list = playlist.video_urls
-    number_of_tracks = len(playlist_list)
+    number_of_elements = len(playlist_list)
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
     
@@ -323,12 +318,12 @@ def ExtractPlaylistData(savepath, slashsys):
             f.write(f"Playlist views so far: \t\t{spaces(playlist.views)}\n")
         except:
             f.write(f"Playlist views so far: \t\t*Option disabled, sorry*\n")
-        f.write(f"Current playlist length: \t{number_of_tracks}\n\n\n\n\n")
+        f.write(f"Current playlist length: \t{number_of_elements}\n\n\n\n\n")
 
-        halfway = ceil(number_of_tracks/2)
+        halfway = ceil(number_of_elements/2)
         exception_count = 0
 
-        for index in range(number_of_tracks):
+        for index in range(number_of_elements):
             if index == halfway:
                 print("We're halfway there!")
             element = YouTube(playlist_list[index])
@@ -336,7 +331,7 @@ def ExtractPlaylistData(savepath, slashsys):
                 print("Internet connection failed.\n\n")
                 return
             try:
-                f.write(f"{number_of_tracks - index}. {element.title}\n")
+                f.write(f"{number_of_elements - index}. {element.title}\n")
                 f.write(f"Views: {spaces(element.views)}\n")
                 f.write(f"{playlist_list[index]}\n\n")
             except:

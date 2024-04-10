@@ -45,11 +45,11 @@ def zeros_at_beginning(index, playlist_len):
     if playlist_len < 10:
         return "0"
     digits_of_biggest_number = len(str(playlist_len))
-    digits_of_index = len(str(index+1))
+    digits_of_index = len(str(index))
     gg = digits_of_biggest_number - digits_of_index
     return gg * "0"
     """
-    return (playlist_len < 10) * "0" + (playlist_len >= 10) *(len(str(playlist_len)) - len(str(index+1))) * "0"       #I'm genuinely sorry
+    return (playlist_len < 10) * "0" + (playlist_len >= 10) *(len(str(playlist_len)) - len(str(index))) * "0"       #I'm genuinely sorry
 
 def spaces(integer):
     integer = str(integer)
@@ -85,24 +85,26 @@ def ReadSaveExtension():
     else:  #elif inputRSE == "v":
         return ".mp4"
 
-def ReadNumbered(min_el_number):
+def ReadNumbered(min_el_index):
     inputNUM = " "
     while True:
-        if min_el_number != 0:
-            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, n - no, f - starting from element's number in playlist, r - reverse)\n>>").lower()
+        if min_el_index != 0:
+            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, integer - starting on integer, n - no, f - starting from element's number in playlist, r - reverse)\n>>").lower()
             if inputNUM == "f":
-                return "from"
+                return min_el_index + 1
         else:
-            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, n - no, r - reverse)\n>>").lower()
+            inputNUM = input("Do You want elements to be numbered? (Enter - starting on 1, integer - starting on integer, n - no, r - reverse)\n>>").lower()
         if inputNUM == "" or inputNUM == "y":
-            return str(min_el_number)
+            return 1
         if inputNUM == "r":
-            return "reverse"
+            return f"r1"
         if inputNUM == "n":
-            return "no"
+            return -1
+        if inputNUM.isdigit():
+            return int(inputNUM)
 
 def ReadNumOfTracks(playlist_len):
-    num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>> ")
+    num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>>")
     if num == '':
         return [0, playlist_len]
     
@@ -200,7 +202,7 @@ def SaveSingle(extension, savepath, slashsys):
         if not is_internet_available():
             print("Internet connection failed.\n\n")
             return
-        print("A problem has occurred. That video might be age restricted.")
+        print("A problem has occurred. That video might be age restricted or something has gone wrong.")
 
     titlevar = sign_police(vid.title)
     finalfilename = titlevar + extension
@@ -225,41 +227,37 @@ def SavePlaylist(extension, savepath, slashsys):
     except:
         print("URL incorrect\n\n")
         return
-    
-    titlevar = sign_police(playlist.title)
 
-    i = 1
-    while path.exists(savepath + slashsys + titlevar):
-        titlevar += "_d"*i
-        i += 1
+    playlist_list = [el for el in playlist.video_urls]
+    playlist_list_len = len(playlist_list)
+    first_and_last_index = ReadNumOfTracks(playlist_list_len)
+    numbered = ReadNumbered(first_and_last_index[0])
 
-    playlist_list = playlist.video_urls
-    number_of_elements = ReadNumOfTracks(len(playlist_list))
-    numbered = ReadNumbered(number_of_elements[0])
-
-    if numbered == "reverse":
-        playlist_list.reverse()
-    if not numbered.isdigit():
-        numbered = 0
-    else:
-        numbered = int(numbered)
+    if isinstance(numbered, str) and numbered[0] == "r":
+        first_and_last_index[0] = playlist_list_len - first_and_last_index[0] - 1
+        first_and_last_index[1] = playlist_list_len - first_and_last_index[1] - 1
+        numbered = int(numbered[1:])
 
     cutlen = ReadCutLens()
 
     if not is_internet_available():
         print("Internet connection failed.\n\n")
         return
+    
+    titlevar = sign_police(playlist.title)
+    while path.exists(savepath + slashsys + titlevar):
+        titlevar += "_d"
     mkdir(titlevar)
     chdir(titlevar)
 
-    for index in range(number_of_elements[0], number_of_elements[1]):
+    for index in range(first_and_last_index[0], first_and_last_index[1], 1-2*(first_and_last_index[0]>first_and_last_index[1])):
         vid = YouTube(playlist_list[index])
         if not is_internet_available():
             print("Internet connection failed.\n\n")
             return
         titlevar = sign_police(vid.title)
-        fileindex = (zeros_at_beginning(index, len(playlist_list)) + f"{index+1-numbered}. ") * (numbered != "no")
-        #numbered += 1
+        fileindex = (zeros_at_beginning(numbered, playlist_list_len) + f"{numbered}. ") * (numbered >= 0)
+        numbered += 1
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:
@@ -275,7 +273,7 @@ def SavePlaylist(extension, savepath, slashsys):
             if not is_internet_available():
                 print("Internet connection failed.\n\n")
                 return
-            print(f"{titlevar} is probably age restricted. Here's a link: {playlist_list[index]}")
+            print(f"{titlevar} is probably age restricted or something has gone wrong. Here's a link: {playlist_list[index]}")
 
 
 
@@ -296,7 +294,7 @@ def ExtractPlaylistData(savepath, slashsys):
     titlevar = sign_police(playlist.title) + "_data"
 
     playlist_list = playlist.video_urls
-    number_of_elements = len(playlist_list)
+    first_and_last_index = len(playlist_list)
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
     
@@ -318,12 +316,12 @@ def ExtractPlaylistData(savepath, slashsys):
             f.write(f"Playlist views so far: \t\t{spaces(playlist.views)}\n")
         except:
             f.write(f"Playlist views so far: \t\t*Option disabled, sorry*\n")
-        f.write(f"Current playlist length: \t{number_of_elements}\n\n\n\n\n")
+        f.write(f"Current playlist length: \t{first_and_last_index}\n\n\n\n\n")
 
-        halfway = ceil(number_of_elements/2)
+        halfway = ceil(first_and_last_index/2)
         exception_count = 0
 
-        for index in range(number_of_elements):
+        for index in range(first_and_last_index):
             if index == halfway:
                 print("We're halfway there!")
             element = YouTube(playlist_list[index])
@@ -331,7 +329,7 @@ def ExtractPlaylistData(savepath, slashsys):
                 print("Internet connection failed.\n\n")
                 return
             try:
-                f.write(f"{number_of_elements - index}. {element.title}\n")
+                f.write(f"{first_and_last_index - index}. {element.title}\n")
                 f.write(f"Views: {spaces(element.views)}\n")
                 f.write(f"{playlist_list[index]}\n\n")
             except:

@@ -104,7 +104,7 @@ def ReadNumbered(min_el_index):
             return int(inputNUM)
 
 def ReadNumOfTracks(playlist_len):
-    num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>>")
+    num = input("How to download the elements? (Enter - all, integer number - number of elements from start, f - starting from element...)\n>>").lower()
     if num == '':
         return [0, playlist_len]
     
@@ -143,6 +143,12 @@ def ReadNumOfTracks(playlist_len):
         print("Downloading whole playlist.\n")
         return [0, playlist_len]
     
+def ReadExtractWriteOrder():
+    order = ""
+    while order not in ["a", "d"]:
+        order = input("In what order do You want to write elements to file? (a - ascending, d - descending)\n>>").lower()
+    return "asc"*(order=="a") + "desc"*(order=="d")
+
 def NameYourFile(lenofcutlist, policedtitle, ext):
     if lenofcutlist[0].isdigit():
         lens = int(lenofcutlist[0])
@@ -228,14 +234,14 @@ def SavePlaylist(extension, savepath, slashsys):
         print("URL incorrect\n\n")
         return
 
-    playlist_list = [el for el in playlist.video_urls]
-    playlist_list_len = len(playlist_list)
-    first_and_last_index = ReadNumOfTracks(playlist_list_len)
+    playlist_list = [YouTube(el) for el in playlist.video_urls]
+    playlist_len = len(playlist_list)
+    first_and_last_index = ReadNumOfTracks(playlist_len)
     numbered = ReadNumbered(first_and_last_index[0])
 
     if isinstance(numbered, str) and numbered[0] == "r":
-        first_and_last_index[0] = playlist_list_len - first_and_last_index[0] - 1
-        first_and_last_index[1] = playlist_list_len - first_and_last_index[1] - 1
+        first_and_last_index[0] = playlist_len - first_and_last_index[0] - 1
+        first_and_last_index[1] = playlist_len - first_and_last_index[1] - 1
         numbered = int(numbered[1:])
 
     cutlen = ReadCutLens()
@@ -250,13 +256,14 @@ def SavePlaylist(extension, savepath, slashsys):
     mkdir(titlevar)
     chdir(titlevar)
 
+    print("Downloading...")
     for index in range(first_and_last_index[0], first_and_last_index[1], 1-2*(first_and_last_index[0]>first_and_last_index[1])):
-        vid = YouTube(playlist_list[index])
+        vid = playlist_list[index]
         if not is_internet_available():
             print("Internet connection failed.\n\n")
             return
         titlevar = sign_police(vid.title)
-        fileindex = (zeros_at_beginning(numbered, playlist_list_len) + f"{numbered}. ") * (numbered >= 0)
+        fileindex = (zeros_at_beginning(numbered, playlist_len) + f"{numbered}. ") * (numbered >= 0)
         numbered += 1
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
@@ -293,19 +300,30 @@ def ExtractPlaylistData(savepath, slashsys):
     
     titlevar = sign_police(playlist.title) + "_data"
 
-    playlist_list = playlist.video_urls
-    first_and_last_index = len(playlist_list)
+    playlist_list = [YouTube(el) for el in playlist.video_urls]
+    playlist_len = len(playlist_list)
+    halfway = ceil(playlist_len/2)
+    exception_count = 0
+    write_order = ReadExtractWriteOrder()
+    if write_order == "asc":
+        start_index = 0
+        end_index = playlist_len
+    else:
+        start_index = playlist_len - 1
+        end_index = 0
+
     calendarium = str(date.today())
     current_time = strftime("%H:%M:%S", localtime())
     
-    if not is_internet_available():
-        print("Internet connection failed.\n\n")
-        return
     if not path.exists(savepath + slashsys + titlevar):
         mkdir(titlevar)
     chdir(titlevar)
 
-    with open(f"{titlevar}_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}.txt", "w") as f:
+    if not is_internet_available():
+        print("Internet connection failed.\n\n")
+        return
+
+    with open(f"{titlevar}_extract_{calendarium[:4]}{calendarium[5:7]}{calendarium[8:10]}{current_time[:2]}{current_time[3:5]}{current_time[6:8]}{write_order}.txt", "w") as f:
         f.write(f"Playlist name: \t\t\t{playlist.title}\n")
         f.write(f"Playlist's url:\t\t\t{link}\n")
         f.write(f"Playlist's owner: \t\t{playlist.owner}\n")
@@ -316,20 +334,19 @@ def ExtractPlaylistData(savepath, slashsys):
             f.write(f"Playlist views so far: \t\t{spaces(playlist.views)}\n")
         except:
             f.write(f"Playlist views so far: \t\t*Option disabled, sorry*\n")
-        f.write(f"Current playlist length: \t{first_and_last_index}\n\n\n\n\n")
+        f.write(f"Current playlist length: \t{playlist_len}\n\n\n\n\n")
 
-        halfway = ceil(first_and_last_index/2)
-        exception_count = 0
-
-        for index in range(first_and_last_index):
+        print("Downloading...")
+        for index in range(start_index, end_index, 1-2*(end_index==0)):
             if index == halfway:
                 print("We're halfway there!")
-            element = YouTube(playlist_list[index])
+            #element = YouTube(playlist_list[index])
+            element = playlist_list[index]
             if not is_internet_available():
                 print("Internet connection failed.\n\n")
                 return
             try:
-                f.write(f"{first_and_last_index - index}. {element.title}\n")
+                f.write(f"{playlist_len - index}. {element.title}\n")
                 f.write(f"Views: {spaces(element.views)}\n")
                 f.write(f"{playlist_list[index]}\n\n")
             except:
@@ -337,7 +354,7 @@ def ExtractPlaylistData(savepath, slashsys):
                     print("Internet connection failed.\n\n")
                     return
                 exception_count += 1
-                f.write(f"{index}. An error has occurred when trying to download data of a video with URL: {playlist_list[index]}\n\n")
+                f.write(f"{playlist_len - index}. An error has occurred when trying to download data of a video with URL: {playlist_list[index]}\n\n")
 
         if exception_count == 0:
             f.write("\n\n\n\nNo errors have occurred during extraction")

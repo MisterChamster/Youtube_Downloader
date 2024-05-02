@@ -196,7 +196,7 @@ def SaveSingle(extension, savepath, slashsys):
             return
         vid = YouTube(str(input("Enter the URL of the video You want to download: \n>> "))) 
     except:
-        print("URL incorrect\n\n")
+        print("URL incorrect\n")
         return
 
     try:
@@ -230,11 +230,11 @@ def SavePlaylist(extension, savepath, slashsys):
             print("Internet connection failed.\n\n")
             return
         playlist = Playlist(str(input("Enter the URL of the playlist You want to download: \n>>")))
+        playlist_list = [YouTube(el) for el in playlist.video_urls]
     except:
-        print("URL incorrect\n\n")
+        print("URL incorrect\n")
         return
 
-    playlist_list = [YouTube(el) for el in playlist.video_urls]
     playlist_len = len(playlist_list)
     first_and_last_index = ReadNumOfTracks(playlist_len)
     numbered = ReadNumbered(first_and_last_index[0])
@@ -294,13 +294,13 @@ def ExtractPlaylistData(savepath, slashsys):
             print("Internet connection failed.\n\n")
             return
         playlist = Playlist(link)
+        playlist_list = [YouTube(el) for el in playlist.video_urls]
     except:
-        print("URL incorrect\n\n")
+        print("URL incorrect\n")
         return
     
     titlevar = sign_police(playlist.title) + "_data"
 
-    playlist_list = [YouTube(el) for el in playlist.video_urls]
     playlist_len = len(playlist_list)
     halfway = ceil(playlist_len/2)
     exception_count = 0

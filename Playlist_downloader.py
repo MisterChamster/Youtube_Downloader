@@ -264,7 +264,7 @@ def SavePlaylist(extension, savepath, slashsys):
             return
         titlevar = sign_police(vid.title)
         fileindex = (zeros_at_beginning(numbered, playlist_len) + f"{numbered}. ") * (numbered >= 0)
-        numbered += 1
+        numbered += (numbered >= 0) * 1
         finalfilename = fileindex + NameYourFile(cutlen, titlevar, extension)
 
         try:

@@ -255,6 +255,7 @@ def SavePlaylist(extension, savepath, slashsys):
         titlevar += "_d"
     mkdir(titlevar)
     chdir(titlevar)
+    exception_count = 0
 
     print("Downloading...")
     for index in range(first_and_last_index[0], first_and_last_index[1], 1-2*(first_and_last_index[0]>first_and_last_index[1])):
@@ -277,6 +278,7 @@ def SavePlaylist(extension, savepath, slashsys):
             print(finalfilename)
 
         except:
+            exception_count += 1
             if not is_internet_available():
                 print("Internet connection failed.\n\n")
                 return
@@ -285,7 +287,12 @@ def SavePlaylist(extension, savepath, slashsys):
 
 
     titlevar = sign_police(playlist.title)
-    print("\n" + titlevar + " has been successfully downloaded")
+    if exception_count == 0:
+        print("\n" + titlevar + " playlist has been successfully downloaded")
+    elif exception_count == 1:
+        print("\n" + "Downloading" + titlevar + "didn't go smooth. There has been 1 exception")
+    else:
+        print("\n" + "Downloading" + titlevar + "didn't go smooth. There have been " + exception_count + "exceptions")
 
 def ExtractPlaylistData(savepath, slashsys):
     try:
